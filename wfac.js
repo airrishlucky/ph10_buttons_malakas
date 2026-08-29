@@ -1,27 +1,57 @@
 (async () => {
-    // Load shared access-control code
+
+    /*
+     * Load PH10 Access Control
+     */
+
     if (!window.PH10Access) {
-        await new Promise((resolve, reject) => {
-            const script = document.createElement("script");
 
-            script.src =
-                "https://airrishlucky.github.io/ph10_buttons_malakas/access.js?v=" +
-                Date.now();
+        await new Promise(
+            (resolve, reject) => {
 
-            script.onload = resolve;
-            script.onerror = () =>
-                reject(new Error("Failed to load PH10 access control"));
+                const script =
+                    document.createElement(
+                        "script"
+                    );
 
-            document.head.appendChild(script);
-        });
+                script.src =
+                    "https://airrishlucky.github.io/ph10-access/access.js?v=" +
+                    Date.now();
+
+                script.onload =
+                    resolve;
+
+                script.onerror =
+                    () =>
+                        reject(
+                            new Error(
+                                "PH10 Access Control failed to load."
+                            )
+                        );
+
+                document.head.appendChild(
+                    script
+                );
+            }
+        );
     }
 
-    // Check access
-    await PH10Access.require("WFAC");
+    /*
+     * ACCESS CHECK
+     */
 
-    // ==================================
-    // YOUR EXISTING AUTOMATION CODE HERE
-    // ==================================
+    await PH10Access.require(
+        "WFAC"
+    );
+
+
+    /*
+     * ===================================
+     * YOUR EXISTING WFAC CODE
+     * ===================================
+     */
+
+    // Existing WFAC code here...
 
 })();
 
