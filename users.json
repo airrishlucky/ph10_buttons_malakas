@@ -1,14 +1,3 @@
 {
-  "users": [
-    {
-      "username": "lucky",
-      "key": "PH10-ABC123",
-      "enabled": true
-    },
-    {
-      "username": "juan",
-      "key": "PH10-XYZ789",
-      "enabled": false
-    }
-  ]
+  "users": []
 }
