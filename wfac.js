@@ -1,3 +1,31 @@
+(async () => {
+    // Load shared access-control code
+    if (!window.PH10Access) {
+        await new Promise((resolve, reject) => {
+            const script = document.createElement("script");
+
+            script.src =
+                "https://airrishlucky.github.io/ph10_buttons_malakas/access.js?v=" +
+                Date.now();
+
+            script.onload = resolve;
+            script.onerror = () =>
+                reject(new Error("Failed to load PH10 access control"));
+
+            document.head.appendChild(script);
+        });
+    }
+
+    // Check access
+    await PH10Access.require("WFAC");
+
+    // ==================================
+    // YOUR EXISTING AUTOMATION CODE HERE
+    // ==================================
+
+})();
+
+
 (function () {
     const el = document.querySelector(
         '#ngForm > fieldset > div:nth-child(1) > div:nth-child(1) > div:nth-child(6) > textarea'
