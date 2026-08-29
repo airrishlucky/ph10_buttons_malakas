@@ -1,111 +1,113 @@
-/*
- * PH10 ACCESS CONTROL
- *
- * Rules:
- * 1. First device registration automatically becomes trusted.
- * 2. Any new username on a trusted device is active.
- * 3. Existing username on a different/untrusted device becomes pending.
- * 4. Disabled users are denied.
- *
- * GitHub Pages version:
- *   access.js
- *   users.json
- */
-
-(() => {
+(function () {
     "use strict";
 
-    const CONFIG = {
-        USERS_URL:
-            "https://airrishlucky.github.io/ph10_buttons_malakas/users.json",
+    const CONFIG =
+        window.PH10_ACCESS_CONFIG || {};
 
-        STORAGE_DEVICE:
-            "ph10_device_id",
-
-        STORAGE_USER:
-            "ph10_username",
-
-        STORAGE_TOOL:
-            "ph10_current_tool"
+    const STORAGE = {
+        deviceId: "ph10_device_id",
+        username: "ph10_username"
     };
 
     function getDeviceId() {
-        let id = localStorage.getItem(CONFIG.STORAGE_DEVICE);
+        let deviceId =
+            localStorage.getItem(
+                STORAGE.deviceId
+            );
 
-        if (!id) {
-            id = crypto.randomUUID();
-            localStorage.setItem(CONFIG.STORAGE_DEVICE, id);
+        if (!deviceId) {
+            deviceId =
+                crypto.randomUUID();
+
+            localStorage.setItem(
+                STORAGE.deviceId,
+                deviceId
+            );
         }
 
-        return id;
+        return deviceId;
     }
 
-    function getSavedUsername() {
-        return localStorage.getItem(CONFIG.STORAGE_USER);
+    function getUsername() {
+        return localStorage.getItem(
+            STORAGE.username
+        );
     }
 
     function saveUsername(username) {
-        localStorage.setItem(CONFIG.STORAGE_USER, username);
+        localStorage.setItem(
+            STORAGE.username,
+            username
+        );
     }
 
-    async function loadDatabase() {
-        const response = await fetch(
-            CONFIG.USERS_URL + "?v=" + Date.now(),
-            {
-                cache: "no-store"
-            }
-        );
+    function normalize(value) {
+        return value
+            .trim()
+            .toLowerCase();
+    }
+
+    async function loadUsers() {
+
+        const response =
+            await fetch(
+                CONFIG.usersUrl +
+                "?v=" +
+                Date.now(),
+                {
+                    cache: "no-store"
+                }
+            );
 
         if (!response.ok) {
-            throw new Error("Could not load users database.");
+            throw new Error(
+                "Unable to load PH10 user database."
+            );
         }
 
         return await response.json();
     }
 
-    function normalizeUsername(username) {
-        return username
-            .trim()
-            .toLowerCase();
-    }
+    function showAccessWindow() {
 
-    function createScreen() {
-        const overlay = document.createElement("div");
+        const overlay =
+            document.createElement("div");
 
-        overlay.id = "ph10-access-overlay";
+        overlay.id =
+            "ph10-access-control";
 
         overlay.innerHTML = `
-            <div id="ph10-access-box">
+            <div class="ph10-access-box">
 
-                <div class="ph10-title">
-                    PH10 ACCESS
-                </div>
+                <h2>PH10 Access Control</h2>
 
-                <div class="ph10-description">
-                    Enter your username to continue.
-                </div>
+                <p>
+                    Enter your username
+                    to continue.
+                </p>
 
                 <input
                     id="ph10-username"
                     type="text"
-                    maxlength="40"
-                    autocomplete="off"
+                    maxlength="50"
                     placeholder="Username"
+                    autocomplete="off"
                 >
 
                 <button id="ph10-continue">
                     Continue
                 </button>
 
-                <div id="ph10-status"></div>
+                <div id="ph10-message"></div>
 
             </div>
         `;
 
-        const style = document.createElement("style");
+        const style =
+            document.createElement("style");
 
         style.textContent = `
-            #ph10-access-overlay {
+            #ph10-access-control {
                 position: fixed;
                 inset: 0;
                 z-index: 2147483647;
@@ -119,8 +121,8 @@
                 font-family: Arial, sans-serif;
             }
 
-            #ph10-access-box {
-                width: 340px;
+            .ph10-access-box {
+                width: 350px;
                 padding: 30px;
 
                 background: #181818;
@@ -128,21 +130,15 @@
 
                 border-radius: 18px;
 
-                box-shadow:
-                    0 20px 60px rgba(0,0,0,.6);
-
                 text-align: center;
+
+                box-shadow:
+                    0 20px 60px
+                    rgba(0,0,0,.6);
             }
 
-            .ph10-title {
-                font-size: 25px;
-                font-weight: bold;
-                margin-bottom: 10px;
-            }
-
-            .ph10-description {
-                color: #bbb;
-                margin-bottom: 20px;
+            .ph10-access-box h2 {
+                margin-top: 0;
             }
 
             #ph10-username {
@@ -151,15 +147,13 @@
 
                 padding: 12px;
 
+                background: #222;
+                color: white;
+
                 border: 1px solid #555;
                 border-radius: 8px;
 
-                background: #252525;
-                color: white;
-
                 font-size: 16px;
-
-                outline: none;
             }
 
             #ph10-continue {
@@ -177,22 +171,9 @@
                 font-weight: bold;
             }
 
-            #ph10-status {
-                min-height: 20px;
+            #ph10-message {
                 margin-top: 15px;
-                font-size: 14px;
-            }
-
-            .ph10-error {
-                color: #ff6666;
-            }
-
-            .ph10-success {
-                color: #66dd88;
-            }
-
-            .ph10-pending {
-                color: #ffcc66;
+                line-height: 1.5;
             }
         `;
 
@@ -204,259 +185,165 @@
             style,
 
             username:
-                document.getElementById("ph10-username"),
+                document.getElementById(
+                    "ph10-username"
+                ),
 
             button:
-                document.getElementById("ph10-continue"),
+                document.getElementById(
+                    "ph10-continue"
+                ),
 
-            status:
-                document.getElementById("ph10-status")
+            message:
+                document.getElementById(
+                    "ph10-message"
+                )
         };
     }
 
-    function removeScreen(screen) {
+    function removeAccessWindow(screen) {
         screen.overlay.remove();
         screen.style.remove();
     }
 
-    function setStatus(screen, text, type) {
-        screen.status.textContent = text;
-
-        screen.status.className = "";
-
-        if (type) {
-            screen.status.classList.add(
-                "ph10-" + type
-            );
-        }
+    function message(
+        screen,
+        text
+    ) {
+        screen.message.textContent =
+            text;
     }
 
-    async function checkAccess(toolName) {
+    async function require(toolId) {
 
-        const deviceId = getDeviceId();
-
-        const db = await loadDatabase();
-
-        if (!db || !Array.isArray(db.users)) {
+        if (!CONFIG.usersUrl) {
             throw new Error(
-                "Invalid users.json"
+                "PH10 Access Control: usersUrl is not configured."
             );
         }
 
+        const deviceId =
+            getDeviceId();
+
+        const database =
+            await loadUsers();
+
         /*
-         * Existing saved username
+         * Check existing saved username.
          */
-        const savedUsername =
-            getSavedUsername();
 
-        if (savedUsername) {
+        const saved =
+            getUsername();
 
-            const normalizedSaved =
-                normalizeUsername(
-                    savedUsername
+        if (saved) {
+
+            const user =
+                database.users.find(
+                    item =>
+                        normalize(
+                            item.username
+                        ) ===
+                        normalize(saved)
                 );
 
-            const existingUser =
-                db.users.find(
-                    user =>
-                        normalizeUsername(
-                            user.username
-                        ) === normalizedSaved
-                );
+            if (user) {
 
-            /*
-             * User exists
-             */
-            if (existingUser) {
+                if (
+                    user.enabled ===
+                    false
+                ) {
+                    deny(
+                        "Your account has been disabled."
+                    );
 
-                if (existingUser.enabled === false) {
-                    return {
-                        allowed: false,
-                        status: "disabled",
-                        username:
-                            existingUser.username
-                    };
+                    throw new Error(
+                        "PH10 user disabled."
+                    );
                 }
 
-                /*
-                 * Device is already registered
-                 */
                 if (
                     Array.isArray(
-                        existingUser.devices
+                        user.devices
                     ) &&
-                    existingUser.devices.includes(
+                    user.devices.includes(
                         deviceId
                     )
                 ) {
+
                     return {
                         allowed: true,
-                        status: "active",
                         username:
-                            existingUser.username
+                            user.username,
+                        deviceId
                     };
                 }
 
                 /*
-                 * Existing user on another device
+                 * Existing username,
+                 * different device.
                  */
-                return {
-                    allowed: false,
-                    status: "pending_device",
-                    username:
-                        existingUser.username
-                };
+
+                deny(
+                    "This device is not registered for this username. The device is pending approval."
+                );
+
+                throw new Error(
+                    "PH10 device pending."
+                );
             }
         }
 
         /*
-         * No saved user.
-         * Show username screen.
+         * Ask for username.
          */
-
-        return {
-            allowed: false,
-            status: "login_required"
-        };
-    }
-
-    async function require(toolName) {
-
-        CONFIG.STORAGE_TOOL &&
-            localStorage.setItem(
-                CONFIG.STORAGE_TOOL,
-                toolName
-            );
-
-        /*
-         * First try saved login
-         */
-        let result =
-            await checkAccess(toolName);
-
-        if (result.allowed) {
-            return result;
-        }
-
-        /*
-         * Already disabled
-         */
-        if (result.status === "disabled") {
-            showMessage(
-                "Access disabled",
-                "Your account has been disabled."
-            );
-
-            throw new Error(
-                "PH10 access disabled."
-            );
-        }
-
-        /*
-         * New device for existing user
-         */
-        if (
-            result.status ===
-            "pending_device"
-        ) {
-            showMessage(
-                "Device pending",
-                "This username is already registered on another device. This device needs approval."
-            );
-
-            throw new Error(
-                "PH10 device pending."
-            );
-        }
-
-        /*
-         * New registration
-         */
-        return await registerNewUser(
-            toolName
-        );
-    }
-
-    async function registerNewUser(toolName) {
 
         const screen =
-            createScreen();
+            showAccessWindow();
 
         return new Promise(
-            (resolve, reject) => {
+            async (resolve, reject) => {
 
                 screen.button.onclick =
                     async () => {
 
-                        const raw =
-                            screen.username.value;
-
                         const username =
-                            raw.trim();
+                            screen.username.value
+                                .trim();
 
                         if (!username) {
-
-                            setStatus(
+                            message(
                                 screen,
-                                "Please enter a username.",
-                                "error"
+                                "Please enter a username."
                             );
-
                             return;
                         }
-
-                        if (
-                            username.length < 2
-                        ) {
-
-                            setStatus(
-                                screen,
-                                "Username is too short.",
-                                "error"
-                            );
-
-                            return;
-                        }
-
-                        screen.button.disabled =
-                            true;
-
-                        setStatus(
-                            screen,
-                            "Checking access...",
-                            ""
-                        );
 
                         try {
 
-                            const deviceId =
-                                getDeviceId();
-
-                            const db =
-                                await loadDatabase();
-
-                            const normalized =
-                                normalizeUsername(
-                                    username
-                                );
-
                             /*
-                             * Check whether
-                             * username already exists.
+                             * Reload database so
+                             * we have the newest
+                             * information.
                              */
+
+                            const latest =
+                                await loadUsers();
 
                             const existing =
-                                db.users.find(
-                                    user =>
-                                        normalizeUsername(
-                                            user.username
+                                latest.users.find(
+                                    item =>
+                                        normalize(
+                                            item.username
                                         ) ===
-                                        normalized
+                                        normalize(
+                                            username
+                                        )
                                 );
 
                             /*
-                             * Existing username
+                             * USER ALREADY EXISTS
                              */
+
                             if (existing) {
 
                                 if (
@@ -464,19 +351,15 @@
                                     false
                                 ) {
 
-                                    setStatus(
+                                    message(
                                         screen,
-                                        "This account is disabled.",
-                                        "error"
+                                        "This account is disabled."
                                     );
-
-                                    screen.button.disabled =
-                                        false;
 
                                     return;
                                 }
 
-                                const devices =
+                                const knownDevices =
                                     Array.isArray(
                                         existing.devices
                                     )
@@ -484,7 +367,7 @@
                                         : [];
 
                                 if (
-                                    devices.includes(
+                                    knownDevices.includes(
                                         deviceId
                                     )
                                 ) {
@@ -493,33 +376,35 @@
                                         existing.username
                                     );
 
-                                    removeScreen(
+                                    removeAccessWindow(
                                         screen
                                     );
 
                                     resolve({
                                         allowed: true,
-                                        status:
-                                            "active",
                                         username:
-                                            existing.username
+                                            existing.username,
+                                        deviceId
                                     });
 
                                     return;
                                 }
 
                                 /*
-                                 * Existing user,
+                                 * Existing user +
                                  * new device.
                                  */
-                                setStatus(
-                                    screen,
-                                    "This username is registered on another device. This device is pending approval.",
-                                    "pending"
+
+                                await submitDeviceRequest(
+                                    existing.username,
+                                    deviceId,
+                                    toolId
                                 );
 
-                                screen.button.disabled =
-                                    false;
+                                message(
+                                    screen,
+                                    "This username already exists on another device. This device has been submitted for approval."
+                                );
 
                                 return;
                             }
@@ -527,26 +412,38 @@
                             /*
                              * NEW USER
                              *
-                             * The frontend considers
-                             * the first device active.
+                             * Registration will be
+                             * performed by GitHub Actions.
+                             */
+
+                            await submitRegistration(
+                                username,
+                                deviceId,
+                                toolId
+                            );
+
+                            /*
+                             * For the browser UI we
+                             * show registration
+                             * submitted.
                              *
-                             * Server-side registration
-                             * will be added next.
+                             * The secure GitHub
+                             * registration process
+                             * is the next part.
                              */
 
                             saveUsername(
                                 username
                             );
 
-                            removeScreen(
+                            removeAccessWindow(
                                 screen
                             );
 
                             resolve({
                                 allowed: true,
-                                status:
-                                    "active",
-                                username
+                                username,
+                                deviceId
                             });
 
                         } catch (error) {
@@ -555,14 +452,10 @@
                                 error
                             );
 
-                            setStatus(
+                            message(
                                 screen,
-                                "Access system error.",
-                                "error"
+                                "PH10 registration error."
                             );
-
-                            screen.button.disabled =
-                                false;
 
                             reject(error);
                         }
@@ -583,28 +476,58 @@
         );
     }
 
-    function showMessage(title, message) {
+    async function submitRegistration(
+        username,
+        deviceId,
+        toolId
+    ) {
 
-        const screen =
-            createScreen();
+        /*
+         * Placeholder.
+         *
+         * GitHub-only registration
+         * will be connected here.
+         */
 
-        screen.username.remove();
-        screen.button.remove();
-
-        setStatus(
-            screen,
-            message,
-            "error"
+        console.log(
+            "PH10 registration:",
+            {
+                username,
+                deviceId,
+                toolId
+            }
         );
+    }
 
-        screen.status.style.marginTop =
-            "20px";
+    async function submitDeviceRequest(
+        username,
+        deviceId,
+        toolId
+    ) {
 
-        screen.status.style.fontSize =
-            "16px";
+        /*
+         * Placeholder.
+         *
+         * GitHub-only device request
+         * will be connected here.
+         */
 
-        screen.status.style.lineHeight =
-            "1.5";
+        console.log(
+            "PH10 device request:",
+            {
+                username,
+                deviceId,
+                toolId
+            }
+        );
+    }
+
+    function deny(text) {
+
+        alert(
+            "PH10 Access Control\n\n" +
+            text
+        );
     }
 
     window.PH10Access = {
