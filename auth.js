@@ -3,23 +3,26 @@
 
     const USERS_URL = "./users.json";
 
-    async function loadUsers() {
-        const response = await fetch(USERS_URL + "?t=" + Date.now());
+    async function getUsers() {
+        const response = await fetch(
+            USERS_URL + "?v=" + Date.now(),
+            { cache: "no-store" }
+        );
 
         if (!response.ok) {
-            throw new Error("Could not load users.json");
+            throw new Error("Unable to load users.json");
         }
 
         return await response.json();
     }
 
-    function showLogin(message = "") {
+    function loginScreen(message = "") {
         document.body.innerHTML = `
             <div style="
                 min-height:100vh;
                 display:flex;
-                justify-content:center;
                 align-items:center;
+                justify-content:center;
                 background:#111;
                 font-family:Arial,sans-serif;
             ">
@@ -27,77 +30,69 @@
                     width:340px;
                     padding:30px;
                     background:#222;
-                    color:white;
-                    border-radius:18px;
+                    color:#fff;
+                    border-radius:16px;
                     text-align:center;
-                    box-shadow:0 15px 50px rgba(0,0,0,.5);
                 ">
-
-                    <h1>🔐 PH10 ACCESS</h1>
-
-                    <p>Enter your access key.</p>
+                    <h2>🔐 PH10 ACCESS</h2>
 
                     <input
                         id="ph10-key"
-                        type="text"
-                        placeholder="PH10-XXXXXX"
+                        placeholder="Enter access key"
                         style="
                             width:100%;
                             box-sizing:border-box;
                             padding:12px;
+                            margin:15px 0;
                             border-radius:8px;
                             border:1px solid #555;
-                            margin:15px 0;
-                            font-size:16px;
                         "
                     >
 
                     <button id="ph10-login" style="
-                        width:100%;
-                        padding:12px;
-                        border:none;
+                        padding:12px 25px;
+                        border:0;
                         border-radius:8px;
                         cursor:pointer;
-                        font-size:16px;
                     ">
                         ENTER
                     </button>
 
                     <div id="ph10-message" style="
                         margin-top:15px;
-                        color:#ff7777;
+                        color:#ff6666;
                     ">${message}</div>
-
                 </div>
             </div>
         `;
 
-        document
-            .getElementById("ph10-login")
-            .addEventListener("click", verifyKey);
+        document.getElementById("ph10-login")
+            .onclick = checkLogin;
 
-        document
-            .getElementById("ph10-key")
-            .addEventListener("keydown", e => {
+        document.getElementById("ph10-key")
+            .onkeydown = e => {
                 if (e.key === "Enter") {
-                    verifyKey();
+                    checkLogin();
                 }
-            });
+            };
     }
 
-    async function verifyKey() {
-        const input = document.getElementById("ph10-key");
-        const message = document.getElementById("ph10-message");
+    async function checkLogin() {
+        const key = document
+            .getElementById("ph10-key")
+            .value
+            .trim();
 
-        const key = input.value.trim();
+        const message =
+            document.getElementById("ph10-message");
 
         if (!key) {
-            message.textContent = "Please enter your access key.";
+            message.textContent = "Enter your access key.";
             return;
         }
 
         try {
-            const data = await loadUsers();
+            const data = await getUsers();
 
             const user = data.users.find(
                 u => u.key === key
@@ -109,33 +104,32 @@
             }
 
             if (!user.enabled) {
-                message.textContent =
-                    "Your access has been disabled.";
+                message.textContent = "Your access is disabled.";
                 return;
             }
 
             localStorage.setItem("ph10_key", user.key);
-            localStorage.setItem("ph10_username", user.username);
+            localStorage.setItem("ph10_user", user.username);
 
-            launchGame(user.username);
+            startGame(user.username);
 
         } catch (error) {
             console.error(error);
-            message.textContent =
-                "Unable to verify access.";
+            message.textContent = "Access system error.";
         }
     }
 
-    async function checkSavedLogin() {
-        const savedKey = localStorage.getItem("ph10_key");
+    async function checkSavedAccess() {
+        const savedKey =
+            localStorage.getItem("ph10_key");
 
         if (!savedKey) {
-            showLogin();
+            loginScreen();
             return;
         }
 
         try {
-            const data = await loadUsers();
+            const data = await getUsers();
 
             const user = data.users.find(
                 u => u.key === savedKey
@@ -143,21 +137,22 @@
 
             if (!user || !user.enabled) {
                 localStorage.removeItem("ph10_key");
-                localStorage.removeItem("ph10_username");
+                localStorage.removeItem("ph10_user");
 
-                showLogin("Your access is disabled.");
+                loginScreen("Your access has been disabled.");
                 return;
             }
 
-            launchGame(user.username);
+            startGame(user.username);
 
         } catch (error) {
             console.error(error);
-            showLogin("Unable to check access.");
+            loginScreen("Unable to verify access.");
         }
     }
 
-    function launchGame(username) {
+    function startGame(username) {
+
         document.body.innerHTML = `
             <div style="
                 min-height:100vh;
@@ -167,31 +162,28 @@
                 background:#111;
                 font-family:Arial,sans-serif;
             ">
-
                 <div style="
                     width:320px;
                     padding:30px;
                     background:#222;
-                    color:white;
+                    color:#fff;
                     text-align:center;
                     border-radius:18px;
                 ">
-
                     <h1>🎮 PH10 GAME</h1>
 
                     <p>
-                        Welcome,
-                        <strong>${username}</strong>
+                        Welcome <b>${username}</b>
                     </p>
 
-                    <p style="font-size:25px">
+                    <p style="font-size:24px">
                         Score:
                         <span id="score">0</span>
                     </p>
 
                     <button id="clickBtn" style="
-                        padding:15px 30px;
-                        border:none;
+                        padding:14px 28px;
+                        border:0;
                         border-radius:10px;
                         cursor:pointer;
                         font-size:18px;
@@ -199,17 +191,11 @@
                         CLICK ME
                     </button>
 
-                    <button id="logoutBtn" style="
-                        display:block;
-                        margin:15px auto 0;
-                        padding:8px 15px;
-                        border:none;
-                        border-radius:7px;
-                        cursor:pointer;
-                    ">
+                    <br><br>
+
+                    <button id="logoutBtn">
                         Logout
                     </button>
-
                 </div>
             </div>
         `;
@@ -223,11 +209,11 @@
 
         document.getElementById("logoutBtn").onclick = () => {
             localStorage.removeItem("ph10_key");
-            localStorage.removeItem("ph10_username");
+            localStorage.removeItem("ph10_user");
             location.reload();
         };
     }
 
-    checkSavedLogin();
+    checkSavedAccess();
 
 })();
