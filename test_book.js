@@ -1,96 +1,47 @@
-(function () {
-    // Prevent duplicate game windows
-    const oldGame = document.getElementById("ph10-mini-game");
-    if (oldGame) {
-        oldGame.remove();
-        return;
-    }
+(() => {
+    document.body.innerHTML = `
+        <div style="
+            min-height:100vh;
+            margin:0;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            background:#111;
+            font-family:Arial,sans-serif;
+        ">
+            <div style="
+                width:320px;
+                padding:30px;
+                text-align:center;
+                background:#222;
+                color:white;
+                border-radius:20px;
+                box-shadow:0 15px 50px rgba(0,0,0,.5);
+            ">
+                <h1>🎮 PH10 Game</h1>
 
-    // Create game window
-    const game = document.createElement("div");
-    game.id = "ph10-mini-game";
+                <p style="font-size:24px">
+                    Score:
+                    <span id="score">0</span>
+                </p>
 
-    game.innerHTML = `
-        <div id="ph10-box">
-            <h2>🎮 PH10 Mini Game</h2>
-
-            <div class="ph10-score">
-                Score: <span id="ph10-score">0</span>
+                <button id="clickBtn" style="
+                    padding:15px 30px;
+                    font-size:18px;
+                    border:0;
+                    border-radius:10px;
+                    cursor:pointer;
+                ">
+                    CLICK ME
+                </button>
             </div>
-
-            <button id="ph10-click">CLICK ME!</button>
-
-            <button id="ph10-close">Close</button>
         </div>
     `;
 
-    // Add styles
-    const style = document.createElement("style");
-
-    style.textContent = `
-        #ph10-mini-game {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 2147483647;
-        }
-
-        #ph10-box {
-            width: 320px;
-            padding: 25px;
-            background: #111;
-            color: white;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0,0,0,.5);
-        }
-
-        #ph10-box h2 {
-            margin-top: 0;
-        }
-
-        .ph10-score {
-            font-size: 22px;
-            margin: 20px;
-        }
-
-        #ph10-click {
-            padding: 14px 30px;
-            font-size: 18px;
-            cursor: pointer;
-            border: none;
-            border-radius: 10px;
-            background: #00c853;
-            color: white;
-        }
-
-        #ph10-close {
-            display: block;
-            margin: 15px auto 0;
-            padding: 7px 15px;
-            cursor: pointer;
-            border: none;
-            border-radius: 7px;
-        }
-    `;
-
-    document.head.appendChild(style);
-    document.body.appendChild(game);
-
     let score = 0;
 
-    // Click button
-    document.getElementById("ph10-click").onclick = function () {
+    document.getElementById("clickBtn").onclick = () => {
         score++;
-        document.getElementById("ph10-score").textContent = score;
+        document.getElementById("score").textContent = score;
     };
-
-    // Close button
-    document.getElementById("ph10-close").onclick = function () {
-        game.remove();
-        style.remove();
-    };
-
 })();
