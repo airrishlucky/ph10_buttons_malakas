@@ -1,3 +1,60 @@
+(async () => {
+
+    /*
+     * Load PH10 Access Control
+     */
+
+    if (!window.PH10Access) {
+
+        await new Promise(
+            (resolve, reject) => {
+
+                const script =
+                    document.createElement(
+                        "script"
+                    );
+
+                script.src =
+                    "https://airrishlucky.github.io/ph10-access/access.js?v=" +
+                    Date.now();
+
+                script.onload =
+                    resolve;
+
+                script.onerror =
+                    () =>
+                        reject(
+                            new Error(
+                                "PH10 Access Control failed to load."
+                            )
+                        );
+
+                document.head.appendChild(
+                    script
+                );
+            }
+        );
+    }
+
+    /*
+     * ACCESS CHECK
+     */
+
+    await PH10Access.require(
+        "TEST_BOOK"
+    );
+
+
+    /*
+     * ===================================
+     * YOUR EXISTING WFAC CODE
+     * ===================================
+     */
+
+    // Existing WFAC code here...
+
+})();
+
 (() => {
     document.body.innerHTML = `
         <div style="
